@@ -1,34 +1,8 @@
 # BW Energy Observatory
 
-Source-transparent live energy intelligence for Baden-Wurttemberg. The dashboard displays published DE-LU electricity prices, German electricity load and generation, Stuttgart DWD weather context, [...]
+Source-transparent live energy intelligence for Baden-Württemberg. The dashboard displays published DE-LU electricity prices, German electricity load and generation, Stuttgart DWD weather context, and official BKG boundaries for all 44 Baden-Wurttemberg districts.
 
 **No synthetic values, forecasts, or fabricated fallbacks.** A source is either returned with its geography and timestamp, or marked unavailable with a reason.
-
-## Verify
-
-```bash
-PYTHONPYCACHEPREFIX=/tmp/bw-energy-pycache python3 tests/test_server.py -v
-node --check static/app.js
-```
-
-## Production notes
-
-The built-in server is for local development and demonstration only. It sends a
-restrictive Content Security Policy, anti-framing headers, and an in-memory
-per-client API request limit, but it is not an internet-facing production
-application server.
-
-```bash
-export API_RATE_LIMIT="30"
-export API_RATE_WINDOW_SECONDS="60"
-python3 app/server.py
-```
-
-For a public deployment, use a managed application platform or production WSGI/
-ASGI server behind an HTTPS reverse proxy or CDN. Apply connection limits,
-request timeouts, rate limiting, HSTS, and TLS at that edge. If a trusted proxy
-removes client-supplied `X-Forwarded-For`, set `TRUST_PROXY_HEADERS=true` so
-the local limiter can distinguish verified visitors.
 
 ## Data coverage
 
