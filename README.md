@@ -1,18 +1,8 @@
 # BW Energy Observatory
 
-Source-transparent live energy intelligence for Baden-Wurttemberg. The dashboard displays published DE-LU electricity prices, German electricity load and generation, Stuttgart DWD weather context, and official BKG boundaries for all 44 Baden-Wurttemberg districts.
+Source-transparent live energy intelligence for Baden-Wurttemberg. The dashboard displays published DE-LU electricity prices, German electricity load and generation, Stuttgart DWD weather context, [...]
 
 **No synthetic values, forecasts, or fabricated fallbacks.** A source is either returned with its geography and timestamp, or marked unavailable with a reason.
-
-## Run locally
-
-Python 3.9 or later is required. The dashboard uses only the Python standard library.
-
-```bash
-python3 app/server.py
-```
-
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
 ## Verify
 
