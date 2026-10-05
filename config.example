@@ -1,0 +1,7 @@
+# Optional free EIA key. Register at https://www.eia.gov/opendata/register.php
+EIA_API_KEY=
+
+# Keep credentials in your shell or a local configuration file that is never committed.
+# ENTSOE_API_TOKEN= is reserved for a future regional-TSO adapter.
+HOST=127.0.0.1
+PORT=8000

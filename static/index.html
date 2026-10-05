@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author"      content="Sahil Kumar">
+    <meta name="description" content="Source-transparent live energy intelligence for Baden-Württemberg — real DE-LU spot prices, German generation mix, DWD weather, 44 district boundaries. No synthetic values.">
+    <meta name="theme-color" content="#09111f">
+
+    <!-- Open Graph — shown when you share the link on LinkedIn / GitHub -->
+    <meta property="og:type"        content="website">
+    <meta property="og:title"       content="BW Energy Observatory">
+    <meta property="og:description" content="Live DE-LU electricity price, German load and generation, Stuttgart weather, and 44 Baden-Württemberg district boundaries. Every metric is verified and source-attributed.">
+    <meta property="og:site_name"   content="BW Energy Observatory — Sahil Kumar">
+
+    <title>BW Energy Observatory — Sahil Kumar</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/enhancements.css">
+    <link rel="stylesheet" href="/vendor/gridstack.min.css">
+  </head>
+  <body>
+    <div class="app-shell">
+
+      <!-- ═══════════════════════════ SIDEBAR ═══════════════════════════ -->
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">⚡</span>
+          <div>
+            <strong>BW Energy</strong>
+            <small>Live observatory</small>
+          </div>
+        </div>
+
+        <!-- Time range -->
+        <section class="side-section time-controls">
+          <p class="side-label">Time range</p>
+          <div class="range-buttons" role="group" aria-label="Select time range">
+            <button data-days="1"  type="button">24h</button>
+            <button data-days="7"  type="button">7d</button>
+            <button data-days="30" type="button" class="active">30d</button>
+            <button data-days="90" type="button">90d</button>
+            <button data-days="365" type="button">1y</button>
+          </div>
+
+          <div class="custom-range">
+            <label for="custom-days">Custom lookback (days)</label>
+            <div>
+              <input id="custom-days" type="number" min="1" max="365" value="30"
+                     aria-label="Number of days to look back">
+              <button id="apply-custom" type="button">Apply</button>
+            </div>
+          </div>
+
+          <div class="calendar-range">
+            <label>Calendar range</label>
+            <input id="range-start" type="date" aria-label="Range start date">
+            <input id="range-end"   type="date" aria-label="Range end date">
+            <button id="apply-date-range" type="button">Apply dates</button>
+          </div>
+
+          <p class="side-hint">
+            Up to 365 days of verified published history.
+            Calendar ranges and rolling windows never produce forecasts.
+          </p>
+        </section>
+
+        <!-- Source coverage -->
+        <section class="side-section source-list">
+          <p class="side-label">Source coverage</p>
+          <div>
+            <span class="source-dot live" aria-label="Live"></span>
+            <strong>Energy-Charts (ISE)</strong>
+            <small>German load + generation · no key</small>
+          </div>
+          <div>
+            <span class="source-dot live" aria-label="Live"></span>
+            <strong><a href="https://www.smard.de/en" target="_blank" rel="noreferrer">Bundesnetzagentur | SMARD.de</a></strong>
+            <small>DE-LU day-ahead price · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a> · visualised and transformed</small>
+          </div>
+          <div>
+            <span class="source-dot live" aria-label="Live"></span>
+            <strong>DWD via Bright Sky</strong>
+            <small>Stuttgart observations · DWD open data</small>
+          </div>
+          <div>
+            <span class="source-dot live" aria-label="Live"></span>
+            <strong>BKG VG250</strong>
+            <small>44 district boundaries · Datenlizenz 2.0</small>
+          </div>
+        </section>
+
+        <p class="side-foot">
+          Author: Sahil Kumar<br>
+          No synthetic values. Every metric retains its actual geography
+          and publication timestamp.
+        </p>
+      </aside>
+
+      <!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+      <main class="workspace">
+
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Baden-Württemberg / verified public sources</p>
+            <h1>Live Energy Intelligence</h1>
+          </div>
+          <div class="top-actions">
+            <a id="download-csv" class="download-link" href="/api/export?days=30"
+               aria-label="Download data as CSV">Download CSV</a>
+            <span id="updated" class="updated" aria-live="polite">Connecting…</span>
+            <button id="refresh" type="button" aria-label="Refresh all data">Refresh</button>
+          </div>
+        </header>
+
+        <!-- Coverage notice -->
+        <div class="coverage-banner" role="note">
+          <span aria-hidden="true">i</span>
+          <p id="coverage-copy">
+            Live electricity data is published for Germany and the DE-LU bidding zone.
+            Select a district to inspect its official BKG boundary and local-data availability.
+          </p>
+        </div>
+        <div id="dashboard-error" class="dashboard-error" role="alert" hidden></div>
+
+        <div id="dashboard-grid" class="grid-stack" aria-label="Customizable dashboard layout">
+        <!-- ── KPI strip ── -->
+        <div class="grid-stack-item" gs-w="12" gs-h="2">
+        <section class="grid-stack-item-content kpis" aria-label="Latest published energy metrics">
+          <article>
+            <p>DE-LU price</p>
+            <strong id="price-value">--</strong>
+            <small id="price-meta">Awaiting source</small>
+          </article>
+          <article>
+            <p>German load</p>
+            <strong id="load-value">--</strong>
+            <small id="load-meta">Awaiting source</small>
+          </article>
+          <article>
+            <p>Observed generation</p>
+            <strong id="generation-value">--</strong>
+            <small id="generation-meta">Awaiting source</small>
+          </article>
+          <article>
+            <p>Renewable share</p>
+            <strong id="renewable-value">--</strong>
+            <small id="renewable-meta">Awaiting source</small>
+          </article>
+        </section>
+        </div>
+
+        <!-- ── Price + System ── -->
+        <div class="grid-stack-item" gs-w="7" gs-h="5">
+          <article class="grid-stack-item-content panel price-panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Market price</p>
+                <h2>DE-LU day-ahead electricity</h2>
+              </div>
+              <div class="chart-switch" role="group" aria-label="Price chart type">
+                <button id="price-line" class="active" type="button" aria-pressed="true">Line</button>
+                <button id="price-bars" type="button" aria-pressed="false">Bars</button>
+              </div>
+            </div>
+            <div id="price-chart" class="chart"
+                 role="img" aria-label="DE-LU day-ahead electricity price history"></div>
+            <div id="price-statistics" class="statistics"></div>
+          </article>
+        </div>
+
+        <div class="grid-stack-item" gs-w="5" gs-h="5">
+          <article class="grid-stack-item-content panel system-panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">System operation</p>
+                <h2>Load and generation</h2>
+              </div>
+              <span class="tag blue">Germany</span>
+            </div>
+            <div id="system-chart" class="chart"
+                 role="img" aria-label="German electricity load and observed generation history"></div>
+            <p class="panel-note">
+              Load and generation are shown together for context.
+              They are not an accounting balance — imports, exports, and storage
+              are also part of the system.
+            </p>
+          </article>
+        </div>
+
+        <!-- ── Comparison + Generation trend ── -->
+        <div class="grid-stack-item" gs-w="6" gs-h="5">
+          <article class="grid-stack-item-content panel comparison-panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Comparison view</p>
+                <h2>Price and load movement</h2>
+              </div>
+              <span class="tag blue">Index: first matched point = 100</span>
+            </div>
+            <div id="price-load-chart" class="chart"
+                 role="img" aria-label="Indexed comparison of DE-LU price and German electricity load"></div>
+            <p class="panel-note">
+              Both series begin at 100 at the first matched timestamp for visual comparison.
+              Different units are preserved. This is not a causal model.
+            </p>
+          </article>
+        </div>
+
+        <div class="grid-stack-item" gs-w="6" gs-h="5">
+          <article class="grid-stack-item-content panel generation-trend-panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Production over time</p>
+                <h2>Generation by published source</h2>
+              </div>
+              <span class="tag green">Germany</span>
+            </div>
+            <div id="generation-trend-chart" class="chart"
+                 role="img" aria-label="German generation trend by published source category"></div>
+            <p class="panel-note">
+              Solar, wind, hydro, biomass, and fossil categories are direct sums
+              of named published Energy-Charts technologies.
+            </p>
+          </article>
+        </div>
+
+        <!-- ── Mix + Weather ── -->
+        <div class="grid-stack-item" gs-w="5" gs-h="5">
+          <article class="grid-stack-item-content panel mix-panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Generation mix</p>
+                <h2>Energy types — latest observation</h2>
+              </div>
+              <span id="mix-time" class="tag green">--</span>
+            </div>
+            <div id="generation-mix" class="generation-mix"></div>
+          </article>
+        </div>
+
+        <div class="grid-stack-item" gs-w="7" gs-h="5">
+          <article class="grid-stack-item-content panel weather-panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">Weather context</p>
+                <h2 id="weather-title">Stuttgart DWD observations</h2>
+              </div>
+              <div class="chart-switch" role="group" aria-label="Weather chart metric">
+                <button id="weather-temperature" class="active" type="button" aria-pressed="true">Temperature</button>
+                <button id="weather-wind" type="button" aria-pressed="false">Wind</button>
+              </div>
+            </div>
+            <div id="weather-chart" class="chart compact-chart"
+                 role="img" aria-label="Hourly Stuttgart weather observations"></div>
+            <p id="weather-note" class="panel-note">Loading local weather observations.</p>
+          </article>
+        </div>
+
+        <!-- ── Anomaly screen ── -->
+        <div class="grid-stack-item" gs-w="12" gs-h="4">
+        <section class="grid-stack-item-content panel analysis-panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Observed behaviour</p>
+              <h2>Price and load anomaly screen</h2>
+            </div>
+            <span class="tag amber">Statistical flags only — not causal findings</span>
+          </div>
+          <div class="analysis-layout">
+            <div class="analysis-summary">
+              <strong id="negative-price-count">--</strong>
+              <span>negative-price 15-minute intervals in this range</span>
+              <p id="analysis-method">--</p>
+            </div>
+            <div>
+              <p class="comparison-note">
+                Weather is a local Stuttgart observation. Price and load are
+                DE-LU / Germany-wide. They are shown side-by-side for context,
+                not as a causal attribution.
+              </p>
+              <div id="anomaly-list" class="anomaly-list" role="list"></div>
+            </div>
+          </div>
+        </section>
+        </div>
+
+        <!-- ── Source data table ── -->
+        <div class="grid-stack-item" gs-w="12" gs-h="5">
+        <section class="grid-stack-item-content panel data-panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Source observations</p>
+              <h2>Latest published values</h2>
+            </div>
+            <a id="table-download" class="download-link" href="/api/export?days=30"
+               aria-label="Download full dataset as CSV">Download full CSV</a>
+          </div>
+          <p class="panel-note">
+            Latest aligned published observations. The CSV retains every row
+            with its original UTC timestamp and source unit.
+          </p>
+          <details class="source-data-details">
+            <summary>Show latest published values</summary>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Time (Berlin)</th>
+                    <th scope="col">Price (EUR/MWh)</th>
+                    <th scope="col">Load (MW)</th>
+                    <th scope="col">Generation (MW)</th>
+                    <th scope="col">Stuttgart temp (°C)</th>
+                    <th scope="col">Wind (m/s)</th>
+                  </tr>
+                </thead>
+                <tbody id="source-table"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+        </div>
+
+        <!-- ── Map ── -->
+        <div class="grid-stack-item" gs-w="12" gs-h="7">
+        <section class="grid-stack-item-content panel map-panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Official geography</p>
+              <h2>Baden-Württemberg: 44 Landkreise</h2>
+            </div>
+            <span id="map-status" class="tag green">Loading boundaries…</span>
+          </div>
+          <div class="map-wrap">
+            <div id="district-map" class="district-map"
+                 role="region" aria-label="Map of Baden-Württemberg Landkreise."></div>
+            <div class="map-legend" aria-label="Map legend">
+              <span>Official boundary coverage</span>
+              <strong>Official BKG boundaries</strong>
+              <small>
+                District-level electricity data is not inferred from national data.
+                © <a href="https://www.bkg.bund.de" target="_blank" rel="noreferrer">BKG</a> <span id="bkg-access-year"></span>
+                <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noreferrer">dl-de/by-2-0</a>,
+                Datenquellen: <a href="https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_vg_nuts.pdf" target="_blank" rel="noreferrer">BKG data sources</a>
+              </small>
+            </div>
+          </div>
+        </section>
+        </div>
+        </div>
+
+        <footer>
+          <span>BW Energy Observatory · Sahil Kumar</span>
+          <span>Source-first. No simulated local load. No unvalidated forecast.</span>
+        </footer>
+
+      </main>
+    </div>
+
+    <!-- defer ensures DOM is ready before JS runs -->
+    <script src="/vendor/gridstack-all.js" defer></script>
+    <script src="/app.js" defer></script>
+  </body>
+</html>
